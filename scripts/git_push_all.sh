@@ -25,16 +25,8 @@ log_ok()    { echo -e "${GREEN}[OK]${RESET}    $*"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
 log_fail()  { echo -e "${RED}[FAIL]${RESET}  $*"; }
 
-# ── 確認 commit 訊息 (Commit message) ──
-COMMIT_MSG="${1:-}"
-if [ -z "$COMMIT_MSG" ]; then
-  echo -e "${YELLOW}請提供 commit 訊息 (Usage: $0 \"你的訊息\")${RESET}"
-  read -rp "Commit message: " COMMIT_MSG
-  if [ -z "$COMMIT_MSG" ]; then
-    log_fail "Commit 訊息不能為空，已中止。"
-    exit 1
-  fi
-fi
+# ── 若未提供 commit 訊息，自動用時間戳記 (Auto-timestamp if no message given) ──
+COMMIT_MSG="${1:-🔄 backup $(date '+%Y-%m-%d %H:%M')}"
 
 # ── 移至 repo 根目錄 (Navigate to repo root) ──
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "")"

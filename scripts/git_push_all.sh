@@ -12,6 +12,7 @@
 #   SourceHut 若網路不可達，push 視為可選項（不會中斷其他平台）。
 
 set -euo pipefail
+export SKIP_LOG_HOOK=1
 
 # ── 顏色輸出 (Color output) ──
 RED='\033[0;31m'
@@ -43,6 +44,11 @@ git add .
 if git diff --cached --quiet; then
   log_warn "沒有需要 commit 的變更 (Nothing to commit)，跳過 commit 步驟。"
 else
+  # ── 自動更新變更日誌 (Auto-update changes log) ──
+  log_info "正在更新變更日誌 (Updating changes.log)..."
+  bash scripts/update_changes_log.sh "$COMMIT_MSG"
+  git add changes.log
+
   git commit -m "$COMMIT_MSG"
   log_ok "Commit 完成：'$COMMIT_MSG'"
 fi

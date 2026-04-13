@@ -1,0 +1,26 @@
+# Development Log / 開發日誌
+
+## 📅 2026-04-13
+### 🚀 Progress Summary / 進度總結
+
+#### 1. UI/UX & Feature Enhancements / UI/UX 與功能增強
+- **Dynamic Chat List / 動態聊天列表**: Refactored `ChatListScreen` to load data from Hive's `contactsBox` dynamically. Added unread badges and localized time formatting. / 重構 `ChatListScreen` 以動態加載 Hive `contactsBox` 資料，並加入未讀徽章與本地化時間格式。
+- **Contact Management / 聯絡人管理**: Implemented `ContactsScreen` for adding, deleting, and viewing P2P contacts with connection status indicators. / 實作 `ContactsScreen` 支援新增、刪除及查看 P2P 聯絡人，並附帶連線狀態指示。
+- **Message Status Indicators / 訊息狀態指示**: Upgraded `ChatBubble` to show delivery status icons (Sending, Sent, Delivered, Read). / 升級 `ChatBubble` 以顯示訊息遞送狀態圖標（傳送中、已送出、已送達、已讀）。
+- **Profile Screen / 個人帳戶頁面**: Created a profile screen showing the user's X25519 public key fingerprint and allowing display name customization. / 建立個人頁面顯示 X25519 公鑰指紋，並允許設定顯示名稱。
+
+#### 2. Security & Persistence / 安全與持久化
+- **Hive + SecureStorage Integration / 硬體加密整合**: Fully integrated hardware-secured storage for message history, ratchet states, and contacts. / 全面整合硬體安全儲存，用於儲存訊息歷史、棘輪狀態及聯絡人。
+- **Double Ratchet Persistence / 雙棘輪持久化**: Implemented state serialization for the Double Ratchet engine to ensure E2EE session continuity across app restarts. / 實作雙棘輪引擎狀態序列化，確保端到端加密會話在 App 重啟後能持續運作。
+
+#### 3. Refactoring & Cleanup / 重構與清理
+- **Deprecation Fixes / 修復過時 API**: Fixed deprecated usages in `SharePlus`, `QrImageView`, and the latest Flutter widget requirements. / 修復 `SharePlus`、`QrImageView` 及最新 Flutter 元件要求的過時用法。
+- **Codebase Sanitization / 程式碼清理**: Removed legacy unencrypted storage logic from `main.dart` and optimized imports. / 從 `main.dart` 移除舊版未加密儲存邏輯並優化引用。
+
+#### 4. DevOps & Backup Mechanism / 開發運維與備份機制
+- **Multi-Remote Git Backup / 多端 Git 備份**: Established a one-shot backup system syncing to GitHub, GitLab, and Codeberg simultaneously. / 建立一鍵備份系統，同時同步至 GitHub、GitLab 及 Codeberg。
+- **Git Alias / Git 別名**: Created `git backup` alias for simplified workflow. / 建立 `git backup` 別名以簡化工作流程。
+
+---
+**Status: Phase 3 (Persistence) Completed. Readiness for Real SMP Integration.**
+**狀態：Phase 3 (持久化) 已完成。準備進行真實 SMP 對接。**

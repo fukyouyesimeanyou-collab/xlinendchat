@@ -26,7 +26,7 @@ class RatchetStateAdapter extends TypeAdapter<RatchetState> {
       receivingChainKeyBytes: (fields[6] as List?)?.cast<int>(),
       receivingMessageNumber: fields[7] as int,
       skippedMessageKeys: (fields[8] as Map).map((dynamic k, dynamic v) =>
-          MapEntry(k as int, (v as List).cast<int>())),
+          MapEntry(k as String, (v as List).cast<int>())),
     );
   }
 

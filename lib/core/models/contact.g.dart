@@ -25,13 +25,15 @@ class ContactAdapter extends TypeAdapter<Contact> {
       lastMessagePreview: fields[5] as String,
       lastMessageAt: fields[6] as DateTime?,
       unreadCount: fields[7] as int,
+      isBarActive: fields[8] as bool,
+      barSessionExpiry: fields[9] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Contact obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.displayName)
       ..writeByte(1)
@@ -47,7 +49,11 @@ class ContactAdapter extends TypeAdapter<Contact> {
       ..writeByte(6)
       ..write(obj.lastMessageAt)
       ..writeByte(7)
-      ..write(obj.unreadCount);
+      ..write(obj.unreadCount)
+      ..writeByte(8)
+      ..write(obj.isBarActive)
+      ..writeByte(9)
+      ..write(obj.barSessionExpiry);
   }
 
   @override

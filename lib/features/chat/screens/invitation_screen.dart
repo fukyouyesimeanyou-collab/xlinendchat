@@ -42,6 +42,31 @@ class _InvitationScreenState extends State<InvitationScreen> {
   void initState() {
     super.initState();
     _startCountdown();
+    _startPakeListener();
+  }
+
+  void _startPakeListener() async {
+    final engine = P2PEngine();
+    final invitationService = InvitationService(
+      identityManager: engine.p2pProvider.identityManager,
+      pakeService: engine.pakeService,
+    );
+
+    // 啟動 PAKE 監聽 (Start PAKE listener)
+    final peer = await invitationService.startWaitingForPeer(widget.shortCode);
+    
+    if (peer != null && mounted) {
+      // 發現同伴！ (Peer found!)
+      _countdownTimer?.cancel();
+      
+      // 這裡理論上應該將 peer 加入資料庫 (In reality, we should add peer to DB here)
+      // 但為了展示，我們直接導向聊天室 (For demo, we just navigate to chat)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已連接到 ${peer['name']}！ (Connected to ${peer['name']}!)')),
+      );
+      
+      Navigator.pop(context); // 關閉邀請頁
+    }
   }
 
   void _startCountdown() {

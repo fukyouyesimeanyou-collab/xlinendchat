@@ -14,15 +14,14 @@ import 'package:flutter/material.dart';
 import '../../ui/skins/skin_service.dart';
 import '../../../ui/widgets/chat_bubble.dart';
 import '../services/chat_message_service.dart';
-import '../../../core/network/smp_client.dart';
-import '../../../core/encryption/e2ee_service.dart';
-import '../../../core/identity/identity_manager.dart';
+import '../../../core/network/waku/p2p_engine.dart';
 import '../../../core/models/contact.dart';
-import '../../../core/security/shredder_service.dart';
 import '../../../core/storage/database_service.dart';
 import 'package:screenshot_callback/screenshot_callback.dart';
 import '../../stickers/widgets/sticker_picker_panel.dart';
 import '../../stickers/services/sticker_service.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 
 class ChatRoomScreen extends StatefulWidget {
   final Contact contact;
@@ -50,25 +49,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _initServices() async {
-    final identityManager = IdentityManager();
-    await identityManager.generateIdentityKeys();
+    // 獲取全局 P2P 引擎 (Get global P2P engine)
+    final engine = P2PEngine();
     
-    final smpClient = SmpClientV9();
-    await smpClient.connect(SmpClientV9.defaultRelay, "mock_fp");
-    
-    final e2eCipher = E2EeService(identityManager);
-    final mockRemoteManager = IdentityManager();
-    await mockRemoteManager.generateIdentityKeys();
+    // 如果尚未初始化，進行初始化 (雖然 main.dart 應該已經做過了)
+    if (!engine.isInitialized) {
+      await engine.init();
+    }
     
     _messageService = ChatMessageService(
-      smpClient: smpClient,
-      e2eCipher: e2eCipher,
-      identityManager: identityManager,
+      p2pProvider: engine.p2pProvider,
+      identityManager: engine.p2pProvider.identityManager,
       remotePublicKey: widget.contact.publicKeyBase64,
-      senderQueueId: "sender_queue_${widget.contact.publicKeyBase64.substring(0, 5)}",
     );
 
     _messageService.addListener(_onServiceUpdate);
+    _messageService.markAsRead();
     _startBarTimerIfNeeded();
     _initScreenshotDetection();
 
@@ -207,6 +203,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _showStickerPicker = false);
   }
 
+  Future<void> _pickAndSendFile() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      await _messageService.sendFile(file);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     /* 監聽皮膚服務 (Listen to SkinService) */
@@ -316,7 +320,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 child: SafeArea(
                   child: Row(
                     children: [
-                       IconButton(icon: const Icon(Icons.add, color: Colors.grey), onPressed: () {}),
+                        IconButton(
+                          icon: const Icon(Icons.add, color: Colors.grey), 
+                          onPressed: _pickAndSendFile
+                        ),
                        IconButton(
                          icon: Icon(
                            _showStickerPicker ? Icons.keyboard : Icons.sentiment_satisfied_alt_outlined, 

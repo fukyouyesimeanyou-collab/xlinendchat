@@ -45,8 +45,8 @@ class RatchetState extends HiveObject {
   final int receivingMessageNumber;
 
   @HiveField(8)
-  /* 略過的訊息金鑰 (Skipped Message Keys: Map<Index, KeyBytes>) */
-  final Map<int, List<int>> skippedMessageKeys;
+  /* 略過的訊息金鑰 (Skipped Message Keys: Map<pubKey+Index, KeyBytes>) */
+  final Map<String, List<int>> skippedMessageKeys;
 
   RatchetState({
     this.rootKeyBytes,

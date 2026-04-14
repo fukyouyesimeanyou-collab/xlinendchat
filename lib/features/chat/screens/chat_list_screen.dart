@@ -59,12 +59,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
     if (index == 0) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactsScreen()))
           .then((_) => _loadContacts()); // 返回後刷新列表
-import '../../settings/screens/settings_screen.dart';
-...
     } else if (index == 4) {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
     } else {
-...
       setState(() => _selectedIndex = index);
     }
   }

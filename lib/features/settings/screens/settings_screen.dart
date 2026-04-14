@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../profile/screens/profile_screen.dart';
 import 'security_settings_screen.dart';
+import 'lifecycle_settings_screen.dart';
 import 'skin_gallery_screen.dart';
 import '../../stickers/screens/sticker_manager_screen.dart';
 import '../../../ui/skins/skin_service.dart';
@@ -38,6 +39,13 @@ class SettingsScreen extends StatelessWidget {
                 icon: Icons.security_outlined,
                 title: '安全設定 (Security)',
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SecuritySettingsScreen())),
+              ),
+              _buildListTile(
+                context,
+                icon: Icons.timer_outlined,
+                title: '生命週期管理 (Lifecycle)',
+                subtitle: '閱後即焚與暫存區配額',
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LifecycleSettingsScreen())),
               ),
               _buildSectionHeader('介面自定義'),
               _buildListTile(

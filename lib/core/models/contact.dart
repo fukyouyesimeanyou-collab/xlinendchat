@@ -62,6 +62,14 @@ class Contact extends HiveObject {
   /* 未讀訊息數量 (Unread message count) */
   int unreadCount;
 
+  @HiveField(8)
+  /* 是否處於閱後即焚模式 (Whether BAR mode is active) */
+  bool isBarActive;
+
+  @HiveField(9)
+  /* 閱後即焚過期時間 (BAR Session expiry timestamp) */
+  DateTime? barSessionExpiry;
+
   Contact({
     required this.displayName,
     required this.publicKeyBase64,

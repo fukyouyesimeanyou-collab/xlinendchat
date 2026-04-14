@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -100,5 +101,21 @@ class StickerService {
       await DatabaseService.stickersBox.delete(id);
       print('🗑️ [StickerService] 貼圖已刪除: ${sticker.fileName}');
     }
+  }
+
+  /*
+   * 儲存接收到的貼圖 (Save a sticker received via P2P)
+   */
+  Future<String> saveReceivedSticker(String base64Data) async {
+    final bytes = base64Decode(base64Data);
+    final dir = await _stickerDir;
+    final fileName = 'rec_${DateTime.now().millisecondsSinceEpoch}.webp';
+    final targetPath = p.join(dir.path, fileName);
+    
+    final file = File(targetPath);
+    await file.writeAsBytes(bytes);
+    
+    print('📦 [StickerService] 接收並存入新貼圖: $fileName');
+    return fileName;
   }
 }

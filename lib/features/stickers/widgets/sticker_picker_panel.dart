@@ -28,34 +28,59 @@ class StickerPickerPanel extends StatelessWidget {
       height: 250,
       padding: const EdgeInsets.symmetric(vertical: 8),
       color: Colors.white,
-      child: GridView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-        ),
-        itemCount: stickers.length,
-        itemBuilder: (context, index) {
-          final sticker = stickers[index];
-          return FutureBuilder<String>(
-            future: service.getStickerAbsolutePath(sticker.fileName),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return Container(color: Colors.grey[100]);
-              
-              return InkWell(
-                onTap: () => onStickerSelected(sticker),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: Image.file(
-                    File(snapshot.data!),
-                    fit: BoxFit.cover,
+      child: StatefulBuilder(
+        builder: (context, setPanelState) {
+          final currentStickers = service.getAllStickers();
+          
+          return GridView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+            ),
+            itemCount: currentStickers.length + 1, // +1 for the "Add" button
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                // 添加按鈕 (Add Button)
+                return InkWell(
+                  onTap: () async {
+                    final newSticker = await service.pickAndAddSticker();
+                    if (newSticker != null) {
+                      setPanelState(() {}); // Refresh panel
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(Icons.add_photo_alternate_outlined, color: Colors.grey[400]),
                   ),
-                ),
+                );
+              }
+
+              final sticker = currentStickers[index - 1];
+              return FutureBuilder<String>(
+                future: service.getStickerAbsolutePath(sticker.fileName),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return Container(color: Colors.grey[100]);
+                  
+                  return InkWell(
+                    onTap: () => onStickerSelected(sticker),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Image.file(
+                        File(snapshot.data!),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
               );
             },
           );
-        },
+        }
       ),
     );
   }

@@ -17,6 +17,7 @@ import 'core/identity/identity_manager.dart';
 import 'core/security/secure_window_manager.dart';
 import 'core/security/volume_key_interceptor.dart';
 import 'core/storage/database_service.dart';
+import 'core/network/waku/p2p_engine.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,10 +35,17 @@ void main() async {
   await DatabaseService.initialize();
   
   /* 
+   * 初始化 P2P 引擎 (啟動 Waku 與加密層)
+   * Initialize P2P Engine (Start Waku and Encryption layer)
+   */
+  final p2pEngine = P2PEngine();
+  await p2pEngine.init();
+
+  /* 
    * 初始化身分管理與硬體自毀監聽。
    * Initialize custom identity and hardware self-destruct listeners.
    */
-  final identityManager = IdentityManager();
+  final identityManager = p2pEngine.p2pProvider.identityManager;
   VolumeKeyInterceptor.startListening(identityManager);
   
   /* 啟動 UI 根元件。 (Launch the root UI component.) */

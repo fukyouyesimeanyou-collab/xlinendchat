@@ -3,8 +3,11 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  disk_space_2
+  file_selector_windows
   flutter_secure_storage_windows
   no_screenshot
+  permission_handler_windows
   share_plus
   url_launcher_windows
 )

@@ -40,9 +40,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
   @override
   void initState() {
     super.initState();
-    // 初始化服務 (Initialize services)
-    final identityManager = IdentityManager();
-    _invitationService = InvitationService(identityManager);
+    // 獲取全局 P2P 引擎 (Get global P2P engine)
+    final engine = P2PEngine();
+    _invitationService = InvitationService(
+      identityManager: engine.p2pProvider.identityManager,
+      pakeService: engine.pakeService,
+    );
   }
 
   @override
@@ -61,7 +64,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     final List<Barcode> barcodes = capture.barcodes;
     for (final barcode in barcodes) {
-      if (barcode.rawValue != null && barcode.rawValue!.startsWith('simplex:')) {
+      if (barcode.rawValue != null && barcode.rawValue!.startsWith('xline:')) {
         await _establishConnection(isQr: true, payload: barcode.rawValue!);
         break;
       }

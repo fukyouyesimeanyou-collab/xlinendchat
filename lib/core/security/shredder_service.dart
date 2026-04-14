@@ -12,6 +12,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../storage/database_service.dart';
 
 class ShredderService {
   /*

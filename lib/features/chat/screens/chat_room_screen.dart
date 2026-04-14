@@ -9,25 +9,24 @@
  * 2. widgets/chat_bubble.dart: Renders the bubble component for each message.
  * 3. Import ChatMessageService for state management.
  */
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../ui/theme/line_colors.dart';
+import '../../ui/skins/skin_service.dart';
 import '../../../ui/widgets/chat_bubble.dart';
 import '../services/chat_message_service.dart';
 import '../../../core/network/smp_client.dart';
 import '../../../core/encryption/e2ee_service.dart';
 import '../../../core/identity/identity_manager.dart';
+import '../../../core/models/contact.dart';
+import '../../../core/security/shredder_service.dart';
+import '../../../core/storage/database_service.dart';
+import 'package:screenshot_callback/screenshot_callback.dart';
+import '../../stickers/widgets/sticker_picker_panel.dart';
+import '../../stickers/services/sticker_service.dart';
 
-/* 
- * ChatRoomScreen 類別：
- * 具體的聊天對話頁面。
- * 
- * ChatRoomScreen class:
- * The detailed chat conversation page.
- */
 class ChatRoomScreen extends StatefulWidget {
-  /* 顯示目前對話對象的名字。 (The name of the person you are chatting with.) */
-  final String userName;
-  const ChatRoomScreen({super.key, required this.userName});
+  final Contact contact;
+  const ChatRoomScreen({super.key, required this.contact});
 
   @override
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
@@ -37,6 +36,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final TextEditingController _controller = TextEditingController();
   late ChatMessageService _messageService;
   bool _isInit = false;
+  
+  Timer? _barTimer;
+  String _timerText = "00:00:00";
+  ScreenshotCallback? _screenshotCallback;
+  bool _isLocalScreenshotDetected = false;
+  bool _showStickerPicker = false;
 
   @override
   void initState() {
@@ -45,14 +50,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _initServices() async {
-    /*
-     * 為了展示 UI 與加密通訊的綁定，我們在此暫時初始化這些服務。
-     * 在未來的架構中，這些服務將會被依賴注入 (DI) 或狀態管理庫提供。
-     * 
-     * For demonstrating the UI binding to encrypted comms, we temporarily initialize
-     * these services here. In the future architecture, they will be provided by DI.
-     */
-    
     final identityManager = IdentityManager();
     await identityManager.generateIdentityKeys();
     
@@ -60,9 +57,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     await smpClient.connect(SmpClientV9.defaultRelay, "mock_fp");
     
     final e2eCipher = E2EeService(identityManager);
-    
-    // 產生一把模擬的對方公鑰，讓 ECDH 能夠運作
-    // Generate a mock remote public key so ECDH can function
     final mockRemoteManager = IdentityManager();
     await mockRemoteManager.generateIdentityKeys();
     
@@ -70,18 +64,132 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       smpClient: smpClient,
       e2eCipher: e2eCipher,
       identityManager: identityManager,
-      remotePublicKey: mockRemoteManager.identityPublicKey!,
-      senderQueueId: "sender_queue_123",
+      remotePublicKey: widget.contact.publicKeyBase64,
+      senderQueueId: "sender_queue_${widget.contact.publicKeyBase64.substring(0, 5)}",
     );
+
+    _messageService.addListener(_onServiceUpdate);
+    _startBarTimerIfNeeded();
+    _initScreenshotDetection();
 
     setState(() {
       _isInit = true;
     });
   }
 
+  void _onServiceUpdate() {
+    if (_messageService.isScreenshotWarningActive) {
+      _showScreenshotDecisionDialog();
+    }
+  }
+
+  void _initScreenshotDetection() {
+    final enabled = DatabaseService.vaultBox.get('screenshot_notify_enabled', defaultValue: false);
+    if (enabled) {
+      _screenshotCallback = ScreenshotCallback();
+      _screenshotCallback!.addListener(() {
+        print('📸 [Local] 偵測到截圖！發送信號中...');
+        _messageService.sendScreenshotSignal();
+        setState(() => _isLocalScreenshotDetected = true);
+        // 本地也顯示系統訊息 (Optional: show local system msg)
+      });
+    }
+  }
+
+  void _startBarTimerIfNeeded() {
+    if (widget.contact.isBarActive && widget.contact.barSessionExpiry != null) {
+      _barTimer?.cancel();
+      _barTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        final now = DateTime.now();
+        final diff = widget.contact.barSessionExpiry!.difference(now);
+        
+        if (diff.isNegative) {
+          timer.cancel();
+          _onBarExpired();
+        } else {
+          setState(() {
+            _timerText = _formatDuration(diff);
+          });
+        }
+      });
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String hours = twoDigits(d.inHours);
+    String minutes = twoDigits(d.inMinutes.remainder(60));
+    String seconds = twoDigits(d.inSeconds.remainder(60));
+    return "$hours:$minutes:$seconds";
+  }
+
+  void _onBarExpired() async {
+    // 24小時時限到，不彈警告，直接執行銷毀並關閉 (Expired: No warning, direct shred)
+    await _messageService.leaveChat(sendSignal: true);
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _handleManualLeave() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('離開對話？'),
+        content: const Text('離開對話後本對話內容將全部徹底刪除，且無法恢復。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            child: const Text('確定', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _messageService.leaveChat(sendSignal: true);
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
+  void _showScreenshotDecisionDialog() {
+    // 確保只彈出一次 (Ensure only one dialog)
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ 截圖警告 (Security Alert)', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: const Text('偵測到對方執行了截圖操作。這可能違反您的隱私設定。\n\n是否立即離開並銷毀所有對話內容？'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              _messageService.dismissScreenshotWarning();
+              Navigator.pop(context);
+            }, 
+            child: const Text('取消 (Ignore)'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _messageService.leaveChat(sendSignal: true);
+              if (mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('立刻銷毀並離開 (Shred & Exit)'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
-    if (_isInit) _messageService.dispose();
+    _barTimer?.cancel();
+    _screenshotCallback?.dispose();
+    if (_isInit) {
+      _messageService.removeListener(_onServiceUpdate);
+      _messageService.dispose();
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -94,93 +202,173 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _controller.clear();
   }
 
+  void _sendSticker(String stickerPath) {
+    _messageService.sendLocalSticker(stickerPath);
+    setState(() => _showStickerPicker = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (!_isInit) {
-      return Scaffold(
-        backgroundColor: LineColors.chatBackground,
-        appBar: AppBar(title: Text(widget.userName)),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    /* 監聽皮膚服務 (Listen to SkinService) */
+    return AnimatedBuilder(
+      animation: SkinService(),
+      builder: (context, _) {
+        final skin = SkinService().currentSkin;
 
-    return Scaffold(
-      /* 聊天室專屬的藍灰色背景。 (The signature blue-grey background for chat rooms.) */
-      backgroundColor: LineColors.chatBackground,
-      appBar: AppBar(
-        title: Text(widget.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.phone_outlined), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
-        ],
-      ),
-      body: Column(
-        children: [
-          /* 用 Expanded 讓訊息列表佔滿剩餘空間，監聽並渲染服務中的對話列表。 */
-          /* Expands the message list to fill available space, listen and render from service. */
-          Expanded(
-            child: AnimatedBuilder(
-              animation: _messageService,
-              builder: (context, child) {
-                final messages = _messageService.messages;
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = messages[index];
-                    return ChatBubble(
-                      text: msg.text,
-                      isMe: msg.isMe,
-                      time: msg.time,
-                      status: msg.status,
+        if (!_isInit) {
+          return Scaffold(
+            backgroundColor: skin.chatBackgroundColor,
+            appBar: AppBar(
+              title: Text(widget.contact.displayName),
+              backgroundColor: skin.appBarBackgroundColor,
+              foregroundColor: skin.appBarForegroundColor,
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: skin.chatBackgroundColor,
+          appBar: AppBar(
+            title: Text(widget.contact.displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: skin.appBarBackgroundColor,
+            foregroundColor: skin.appBarForegroundColor,
+            elevation: 0,
+            bottom: (_messageService.isScreenshotWarningActive || _isLocalScreenshotDetected)
+              ? PreferredSize(
+                  preferredSize: const Size.fromHeight(40),
+                  child: Container(
+                    width: double.infinity,
+                    color: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: const Center(
+                      child: Text(
+                        '⚠️ 偵測到違規截圖操作！內容已受威脅',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+            leading: widget.contact.isBarActive 
+              ? Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextButton(
+                    onPressed: _handleManualLeave,
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    ),
+                    child: const Text('離開對話', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                )
+              : const BackButton(),
+            leadingWidth: widget.contact.isBarActive ? 80 : null,
+            actions: [
+              if (widget.contact.isBarActive)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Text(
+                      _timerText,
+                      style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, color: Colors.red),
+                    ),
+                  ),
+                )
+              else ...[
+                IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.phone_outlined), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
+              ],
+            ],
+          ),
+          body: Column(
+            children: [
+              Expanded(
+                child: AnimatedBuilder(
+                  animation: _messageService,
+                  builder: (context, child) {
+                    final messages = _messageService.messages;
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        return ChatBubble(
+                          text: msg.text,
+                          isMe: msg.isMe,
+                          time: msg.time,
+                          status: msg.status,
+                          stickerPath: msg.stickerPath,
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-          ),
-          
-          /* 底端輸入欄位 (Bottom Input Bar) */
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            color: Colors.white,
-            child: SafeArea(
-              child: Row(
-                children: [
-                   IconButton(icon: const Icon(Icons.add, color: Colors.grey), onPressed: () {}),
-                   IconButton(icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey), onPressed: () {}),
-                   IconButton(icon: const Icon(Icons.photo_outlined, color: Colors.grey), onPressed: () {}),
-                   Expanded(
-                     child: Container(
-                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                       decoration: BoxDecoration(
-                         color: Colors.grey[100],
-                         borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              
+              /* 底端輸入欄位 (Bottom Input Bar) */
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                color: skin.inputBarColor,
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                       IconButton(icon: const Icon(Icons.add, color: Colors.grey), onPressed: () {}),
+                       IconButton(
+                         icon: Icon(
+                           _showStickerPicker ? Icons.keyboard : Icons.sentiment_satisfied_alt_outlined, 
+                           color: Colors.grey
+                         ), 
+                         onPressed: () {
+                           setState(() {
+                             _showStickerPicker = !_showStickerPicker;
+                             if (_showStickerPicker) {
+                               FocusScope.of(context).unfocus();
+                             }
+                           });
+                         }
                        ),
-                       child: TextField(
-                         controller: _controller,
-                         decoration: const InputDecoration(
-                           hintText: 'Aa',
-                           border: InputBorder.none,
-                           hintStyle: TextStyle(color: Colors.grey),
+                       IconButton(icon: const Icon(Icons.camera_alt_outlined, color: Colors.grey), onPressed: () {}),
+                       IconButton(icon: const Icon(Icons.photo_outlined, color: Colors.grey), onPressed: () {}),
+                       Expanded(
+                         child: Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 12),
+                           decoration: BoxDecoration(
+                             color: skin.inputFieldColor,
+                             borderRadius: skin.inputFieldBorderRadius,
+                           ),
+                           child: TextField(
+                             controller: _controller,
+                             decoration: const InputDecoration(
+                               hintText: 'Aa',
+                               border: InputBorder.none,
+                               hintStyle: TextStyle(color: Colors.grey),
+                             ),
+                           ),
                          ),
                        ),
-                     ),
-                   ),
-                   IconButton(
-                     icon: Icon(Icons.send, color: LineColors.primaryGreen),
-                     onPressed: _sendMessage,
-                   ),
-                ],
+                       skin.buildSendButton(
+                         onPressed: _sendMessage,
+                         color: skin.primaryColor,
+                       ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              if (_showStickerPicker)
+                StickerPickerPanel(
+                  onStickerSelected: (sticker) async {
+                    final fullPath = await StickerService().getStickerAbsolutePath(sticker.fileName);
+                    _sendSticker(fullPath);
+                  },
+                ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

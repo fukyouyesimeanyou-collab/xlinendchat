@@ -71,6 +71,8 @@ class Contact extends HiveObject {
     this.lastMessagePreview = '',
     this.lastMessageAt,
     this.unreadCount = 0,
+    this.isBarActive = false,
+    this.barSessionExpiry,
   });
 
   /*

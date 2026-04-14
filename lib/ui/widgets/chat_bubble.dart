@@ -7,8 +7,9 @@
  * Includes message delivery status indicators:
  * sending → spinner  sent → single tick  delivered → double tick  read → blue double tick
  */
+import 'dart:io';
 import 'package:flutter/material.dart';
-import '../theme/line_colors.dart';
+import '../skins/skin_service.dart';
 import '../../core/models/chat_message.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -17,6 +18,7 @@ class ChatBubble extends StatelessWidget {
   final String time;
   /* 訊息傳送狀態 (Message delivery status) — 只有我方顯示 */
   final MessageStatus status;
+  final String? stickerPath;
 
   const ChatBubble({
     super.key,
@@ -24,6 +26,7 @@ class ChatBubble extends StatelessWidget {
     required this.isMe,
     required this.time,
     this.status = MessageStatus.sent,
+    this.stickerPath,
   });
 
   /*
@@ -32,23 +35,27 @@ class ChatBubble extends StatelessWidget {
    */
   Widget _buildStatusIcon() {
     if (!isMe) return const SizedBox.shrink(); // 只有我方顯示狀態
+    final skin = SkinService().currentSkin;
+    
     switch (status) {
       case MessageStatus.sending:
-        return const SizedBox(
+        return SizedBox(
           width: 12, height: 12,
-          child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.grey),
+          child: CircularProgressIndicator(strokeWidth: 1.5, color: skin.statusIconColor),
         );
       case MessageStatus.sent:
-        return const Icon(Icons.check, size: 14, color: Colors.grey);
+        return Icon(Icons.check, size: 14, color: skin.statusIconColor);
       case MessageStatus.delivered:
-        return const Icon(Icons.done_all, size: 14, color: Colors.grey);
+        return Icon(Icons.done_all, size: 14, color: skin.statusIconColor);
       case MessageStatus.read:
-        return const Icon(Icons.done_all, size: 14, color: Colors.blue);
+        return Icon(Icons.done_all, size: 14, color: skin.readStatusColor);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final skin = SkinService().currentSkin;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
@@ -59,7 +66,7 @@ class ChatBubble extends StatelessWidget {
           if (isMe) ...[
             _buildStatusIcon(),
             const SizedBox(width: 4),
-            Text(time, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(time, style: TextStyle(fontSize: 10, color: skin.statusIconColor)),
             const SizedBox(width: 4),
           ],
 
@@ -67,13 +74,8 @@ class ChatBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: isMe ? LineColors.myBubble : LineColors.otherBubble,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isMe ? 16 : 0),
-                  bottomRight: Radius.circular(isMe ? 0 : 16),
-                ),
+                color: isMe ? skin.myBubbleColor : skin.otherBubbleColor,
+                borderRadius: skin.getBubbleBorderRadius(isMe),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
@@ -82,14 +84,22 @@ class ChatBubble extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Text(text, style: const TextStyle(fontSize: 16, color: Colors.black)),
+              child: stickerPath != null
+                ? ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 150, maxHeight: 150),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(File(stickerPath!), fit: BoxFit.contain),
+                    ),
+                  )
+                : Text(text, style: TextStyle(fontSize: 16, color: isMe ? skin.myTextColor : skin.otherTextColor)),
             ),
           ),
 
           /* 對方訊息：時間在右 (Their messages: time on the right) */
           if (!isMe) ...[
             const SizedBox(width: 4),
-            Text(time, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(time, style: TextStyle(fontSize: 10, color: skin.statusIconColor)),
           ],
         ],
       ),

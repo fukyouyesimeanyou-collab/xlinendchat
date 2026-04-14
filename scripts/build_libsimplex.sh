@@ -32,12 +32,12 @@ else
 fi
 
 echo "🚀 [1/3] 準備使用 $CONTAINER_CMD 建立編譯環境 (Building container image)..."
-$CONTAINER_CMD build -t simplex-android-builder ./scripts/build_libsimplex
+$CONTAINER_CMD build --platform linux/amd64 --security-opt seccomp=unconfined -t simplex-android-builder ./scripts/build_libsimplex
 
 echo "🚀 [2/3] 啟動容器進行編譯 (可能需要數小時) (Running compilation container)..."
 # 移除同名的殘留容器
 $CONTAINER_CMD rm -f temp_simplex_builder || true
-$CONTAINER_CMD run -d --name temp_simplex_builder simplex-android-builder
+$CONTAINER_CMD run --platform linux/amd64 --security-opt seccomp=unconfined -d --name temp_simplex_builder simplex-android-builder
 
 echo "🚀 [3/3] 等待編譯完成並複製成品 (Extracting compiled .so file)..."
 # 此處為確保容器有足夠時間產生檔案，真實使用時可能必須使用 docker wait 或是掛載 volume，

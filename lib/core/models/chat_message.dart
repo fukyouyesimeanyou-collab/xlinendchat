@@ -47,11 +47,40 @@ class ChatMessage extends HiveObject {
   /* 訊息傳送狀態 (Message delivery status) */
   MessageStatus status;
 
+  @HiveField(4)
+  /* 閱後即焚時長 (Burn duration in seconds, null means never) */
+  int? burnDuration;
+
+  @HiveField(5)
+  /* 已讀時間 (Timestamp when message was read) */
+  DateTime? readAt;
+
+  @HiveField(6)
+  /* 對話唯一識別碼 (Chat identifier/Remote fingerprint) */
+  String? chatId;
+
+  @HiveField(7)
+  /* 是否處於閱後即焚模式 (Whether BAR mode is active) */
+  bool isBarActive;
+
+  @HiveField(8)
+  /* 閱後即焚過期時間 (BAR Session expiry timestamp) */
+  DateTime? barSessionExpiry;
+
   ChatMessage({
     required this.text,
     required this.isMe,
     required this.time,
     this.status = MessageStatus.sent,
+    this.burnDuration = 30, // 預設 30 秒 (Default 30 seconds)
+    this.readAt,
+    this.chatId,
+    this.isBarActive = false,
+    this.barSessionExpiry,
+    this.stickerPath,
   });
-}
 
+  @HiveField(9)
+  /* 本地貼圖路徑 (Local sticker path) */
+  final String? stickerPath;
+}

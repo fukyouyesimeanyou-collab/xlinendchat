@@ -11,3 +11,31 @@
 | 2026-04-14 02:51:06 | `scripts/git_push_all.sh` | **Modified / 已修改**: 測試日誌自動化機制 (Testing Automated Log System) |
 | 2026-04-14 02:51:06 | `scripts/update_changes_log.sh` | **Added / 已新增**: 測試日誌自動化機制 (Testing Automated Log System) |
 | 2026-04-14 02:51:19 | `log_test_file.txt` | **Deleted / 已刪除**: 清理測試檔案 (Cleanup test file) |
+| 2026-04-14 08:38:53 | `NEXT_STEPS_GHOST.md` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/core/models/chat_message.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/core/models/chat_message.g.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/core/models/contact.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/core/models/sticker.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/core/security/shredder_service.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/core/storage/database_service.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/chat/screens/chat_list_screen.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/chat/screens/chat_room_screen.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/chat/services/chat_message_service.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/settings/screens/security_settings_screen.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/settings/screens/settings_screen.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/settings/screens/skin_gallery_screen.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/stickers/screens/sticker_manager_screen.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/stickers/services/sticker_service.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/features/stickers/widgets/sticker_picker_panel.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/main.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/ui/skins/line_skin.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/ui/skins/skin_service.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/ui/skins/skin_specification.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/ui/skins/telegram_skin.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/ui/skins/whatsapp_skin.dart` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `lib/ui/widgets/chat_bubble.dart` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `pubspec.yaml` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `scripts/build_libsimplex.sh` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `scripts/build_libsimplex/Dockerfile` | **Modified / 已修改**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `scripts/migrate_to_framework.sh` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |
+| 2026-04-14 08:38:53 | `simplex-chat-src` | **Added / 已新增**: Project Ghost Phase 1: Native bridge (libwaku.so) successfully compiled |

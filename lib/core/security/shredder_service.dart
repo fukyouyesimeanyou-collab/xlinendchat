@@ -66,11 +66,36 @@ class ShredderService {
       /* 最後使用 Hive 原生的刪除指令確保殘留快取清空 (Finally use Hive native delete to ensure cache is cleared) */
       await Hive.deleteFromDisk();
       
-      // TODO: Delete Secure Storage Keystore keys here.
-      
       print('Self-destruct sequence completed.');
     } catch (e) {
       print('Critical error during self-destruct: $e');
+    }
+  }
+
+  /*
+   * 銷毀特定的對話 Session。
+   * Shreds specific chat session by chatId.
+   */
+  static Future<void> shredSession(String chatId) async {
+    try {
+      final box = DatabaseService.chatHistoryBox;
+      final keysToDelete = <dynamic>[];
+      
+      // 找出所有屬於該 chatId 的訊息 (Find all messages for this chatId)
+      for (var key in box.keys) {
+        final msg = box.get(key);
+        if (msg?.chatId == chatId) {
+          keysToDelete.add(key);
+        }
+      }
+      
+      // 執行刪除 (Execute deletion)
+      if (keysToDelete.isNotEmpty) {
+        await box.deleteAll(keysToDelete);
+        debugPrint('🔥 [ShredderService] 已銷毀對話 Session: $chatId');
+      }
+    } catch (e) {
+      debugPrint('Error shredsing session: $e');
     }
   }
 }

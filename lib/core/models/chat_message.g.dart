@@ -21,13 +21,18 @@ class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
       isMe: fields[1] as bool,
       time: fields[2] as String,
       status: fields[3] as MessageStatus,
+      burnDuration: fields[4] as int?,
+      readAt: fields[5] as DateTime?,
+      chatId: fields[6] as String?,
+      isBarActive: fields[7] as bool,
+      barSessionExpiry: fields[8] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, ChatMessage obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.text)
       ..writeByte(1)
@@ -35,7 +40,17 @@ class ChatMessageAdapter extends TypeAdapter<ChatMessage> {
       ..writeByte(2)
       ..write(obj.time)
       ..writeByte(3)
-      ..write(obj.status);
+      ..write(obj.status)
+      ..writeByte(4)
+      ..write(obj.burnDuration)
+      ..writeByte(5)
+      ..write(obj.readAt)
+      ..writeByte(6)
+      ..write(obj.chatId)
+      ..writeByte(7)
+      ..write(obj.isBarActive)
+      ..writeByte(8)
+      ..write(obj.barSessionExpiry);
   }
 
   @override

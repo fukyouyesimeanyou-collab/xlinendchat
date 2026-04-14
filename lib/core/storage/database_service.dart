@@ -27,6 +27,7 @@ class DatabaseService {
   static late Box<ChatMessage> chatHistoryBox;
   static late Box<RatchetState> ratchetBox;
   static late Box<Contact> contactsBox;
+  static late Box stickersBox; // 為貼圖庫新增的 Box (Added for sticker library)
 
   /*
    * 在 App 啟動時必須先呼叫的非同步初始化函式
@@ -72,7 +73,49 @@ class DatabaseService {
     chatHistoryBox = await Hive.openBox<ChatMessage>('chat_history', encryptionCipher: cipher);
     ratchetBox = await Hive.openBox<RatchetState>('ratchet', encryptionCipher: cipher);
     contactsBox = await Hive.openBox<Contact>('contacts', encryptionCipher: cipher);
+    stickersBox = await Hive.openBox('stickers', encryptionCipher: cipher);
     
     print('✅ [DatabaseService] 成功載入受硬體保護的加密資料庫 (Successfully loaded hardware-encrypted databases)');
+    
+    // 執行過期 BAR 對話檢查 (Perform expired BAR session check)
+    await _checkExpiredBarSessions();
+  }
+
+  /*
+   * 補執行機制：檢查是否有在 App 關閉期間過期的 BAR 對話。
+   * Startup check: Clean up BAR sessions that expired while the app was closed.
+   */
+  static Future<void> _checkExpiredBarSessions() async {
+    final now = DateTime.now();
+    final contacts = contactsBox.values.toList();
+    
+    for (var contact in contacts) {
+      if (contact.isBarActive && contact.barSessionExpiry != null) {
+        if (contact.barSessionExpiry!.isBefore(now)) {
+          print('🚨 [BARCheck] 偵測到過期對話 (${contact.displayName})，啟動自動銷毀...');
+          
+          // 1. 物理粉碎訊息 (Shred messages)
+          // Note: ShredderService needs to be imported or use its logic here.
+          // Since we are in DatabaseService, we can access chatHistoryBox directly.
+          final keysToDelete = <dynamic>[];
+          for (var key in chatHistoryBox.keys) {
+            final msg = chatHistoryBox.get(key);
+            if (msg?.chatId == contact.publicKeyBase64) {
+              keysToDelete.add(key);
+            }
+          }
+          if (keysToDelete.isNotEmpty) {
+            await chatHistoryBox.deleteAll(keysToDelete);
+          }
+          
+          // 2. 重置狀態 (Reset state)
+          contact.isBarActive = false;
+          contact.barSessionExpiry = null;
+          await contact.save();
+          
+          print('🔥 [BARCheck] 過期對話已銷毀。');
+        }
+      }
+    }
   }
 }

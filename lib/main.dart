@@ -12,30 +12,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'features/chat/screens/chat_list_screen.dart';
-import 'ui/theme/line_colors.dart';
+import 'ui/skins/skin_service.dart';
 import 'core/identity/identity_manager.dart';
 import 'core/security/secure_window_manager.dart';
 import 'core/security/volume_key_interceptor.dart';
 import 'core/storage/database_service.dart';
 
-/* 
- * main() 是整個 Flutter 程式的入口點 (Entry Point)。
- * 因為涉及非同步操作（初始化資料庫），所以標記為 async。
- * 
- * main() is the entry point of the Flutter application. 
- * Marked as async because it involves asynchronous operations like 
- * database initialization.
- */
 void main() async {
-  /* 
-   * 確保 Flutter 引擎初始化完成。
-   * Ensures the Flutter binding is initialized before running the app.
-   */
   WidgetsFlutterBinding.ensureInitialized();
   
-  /* 
-   * 啟用防截圖保護。 (Enable anti-screenshot protection.)
-   */
+  /* 載入皮膚設定 (Load skin settings) */
+  SkinService().loadPersistedSkin();
+
+  /* 啟用防截圖保護 (Enable anti-screenshot protection) */
   await SecureWindowManager.enableProtection();
   
   /* 
@@ -57,36 +46,44 @@ void main() async {
 
 /* 
  * LineChatApp 類別：
- * 這是應用程式的最上層元件，定義了應用的主題、標題與導向。
- * 
- * LineChatApp class:
- * The top-level widget of the application, defining themes, titles, and routing.
+ * 應用程式根元件，現在會監聽 SkinService 的變更。
  */
 class LineChatApp extends StatelessWidget {
   const LineChatApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'LINE P2P Clone',
-      /* 關閉開發模式的紅色橫條。 (Hides the debug banner.) */
-      debugShowCheckedModeBanner: false,
-      /* 
-       * 定義應用程式的全局主題。
-       * Defines the global application theme.
-       */
-      theme: ThemeData(
-        primaryColor: LineColors.primaryGreen,
-        scaffoldBackgroundColor: LineColors.background,
-        /* 使用 Google Fonts 提升介面質感。 (Uses Google Fonts for better aesthetics.) */
-        textTheme: GoogleFonts.notoSansTextTheme(),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: LineColors.primaryGreen,
-          primary: LineColors.primaryGreen,
-        ),
-      ),
-      /* 設定應用的第一個顯示頁面為聊天列表。 (Sets the initial screen to the Chat List.) */
-      home: const ChatListScreen(),
+    return AnimatedBuilder(
+      animation: SkinService(),
+      builder: (context, _) {
+        final skin = SkinService().currentSkin;
+        
+        return MaterialApp(
+          title: 'XLinendChat',
+          /* 關閉開發模式的紅色橫條。 (Hides the debug banner.) */
+          debugShowCheckedModeBanner: false,
+          /* 
+           * 定義應用程式的全局主題，從當前 Skin 提取。
+           * Defines the global application theme derived from current skin.
+           */
+          theme: ThemeData(
+            primaryColor: skin.primaryColor,
+            scaffoldBackgroundColor: skin.scaffoldBackgroundColor,
+            textTheme: GoogleFonts.notoSansTextTheme(),
+            appBarTheme: AppBarTheme(
+              backgroundColor: skin.appBarBackgroundColor,
+              foregroundColor: skin.appBarForegroundColor,
+              elevation: 0,
+            ),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: skin.primaryColor,
+              primary: skin.primaryColor,
+            ),
+          ),
+          /* 設定應用的第一個顯示頁面為聊天列表。 (Sets the initial screen to the Chat List.) */
+          home: const ChatListScreen(),
+        );
+      },
     );
   }
 }
